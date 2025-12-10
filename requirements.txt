@@ -1,0 +1,12 @@
+streamlit
+Pillow
+transformers
+web3
+opencv-python-headless
+numpy
+exifread
+python-dotenv
+torch
+datasets
+accelerate
+google-generativeai
