@@ -9,9 +9,7 @@ def verify_blockchain():
     print("--- Blockchain Verification ---")
 
     # 1. Check RPC Connection
-    rpc_urls = [
-        "https://sepolia.infura.io/v3/cd5402720dc948d888f977c9de2a97ec"
-    ]
+    rpc_urls = ["YOUR_RPC_URL_HERE"]
 
     connected = False
     for url in rpc_urls:
@@ -72,3 +70,4 @@ def verify_blockchain():
 
 if __name__ == "__main__":
     verify_blockchain()
+
