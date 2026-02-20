@@ -225,8 +225,9 @@ body {
 }
 
 .btn-primary {
-    background: linear-gradient(135deg, #6366f1, #4f46e5);
-    color: white;
+    background-color: #4f46e5;
+    background-image: linear-gradient(135deg, #6366f1, #4f46e5);
+    color: #fff;
     box-shadow: 0 4px 15px rgba(99, 102, 241, 0.35);
 }
 
@@ -254,8 +255,9 @@ body {
 }
 
 .btn-blockchain {
-    background: linear-gradient(135deg, #10b981, #059669);
-    color: white;
+    background-color: #047857;
+    background-image: linear-gradient(135deg, #10b981, #059669);
+    color: #fff;
     box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
 }
 

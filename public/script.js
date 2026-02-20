@@ -140,10 +140,10 @@
 
         // Verdict styling
         const verdictMap = {
-            real_image: { label: '✅ Authentic Photo', cssClass: 'real' },
-            ai_generated: { label: '🤖 AI-Generated', cssClass: 'ai' },
-            screenshot: { label: '📸 Screenshot Detected', cssClass: 'screenshot' },
-            unknown: { label: '❓ Unknown', cssClass: 'unknown' },
+            real_image: { label: 'Authentic Photo', cssClass: 'real' },
+            ai_generated: { label: 'AI-Generated', cssClass: 'ai' },
+            screenshot: { label: 'Screenshot Detected', cssClass: 'screenshot' },
+            unknown: { label: 'Unknown', cssClass: 'unknown' },
         };
 
         const v = verdictMap[data.verdict] || verdictMap.unknown;
@@ -158,10 +158,10 @@
         const forensics = data.forensics || {};
         forensicsGrid.innerHTML = buildForensicItem('ELA Score', forensics.ela_score != null ? forensics.ela_score.toFixed(2) : 'N/A')
             + buildForensicItem('Noise Score', forensics.noise_score != null ? forensics.noise_score.toFixed(2) : 'N/A')
-            + buildForensicItem('Metadata', forensics.metadata_clean ? '✅ Clean' : '⚠️ Edited')
+            + buildForensicItem('Metadata', forensics.metadata_clean ? 'Clean' : 'Edited')
             + buildForensicItem('Software', forensics.software || 'None detected')
             + buildForensicItem('Screenshot Conf.', forensics.screenshot_confidence + '%')
-            + buildForensicItem('Gemini', data.gemini_available ? '✅ Active' : '⚠️ Unavailable');
+            + buildForensicItem('Gemini', data.gemini_available ? 'Active' : 'Unavailable');
 
         // ELA image
         if (forensics.ela_image) {
@@ -226,7 +226,7 @@
         if (!analysisData) return;
 
         registerBtn.disabled = true;
-        registerBtn.textContent = '⏳ Registering...';
+        registerBtn.textContent = 'Registering...';
 
         try {
             const response = await fetch('/api/blockchain/register', {
@@ -249,22 +249,22 @@
             if (data.success) {
                 registerResult.className = 'register-success';
                 registerResult.innerHTML =
-                    '<p><strong>✅ Successfully registered!</strong></p>'
+                    '<p><strong>Successfully registered!</strong></p>'
                     + '<p>Transaction Hash:</p>'
                     + '<span class="bc-hash">' + data.tx_hash + '</span>'
                     + '<p style="margin-top:8px"><a href="https://sepolia.etherscan.io/" target="_blank" rel="noopener" style="color: var(--green)">View on Sepolia Etherscan →</a></p>';
                 registerBtn.style.display = 'none';
             } else {
                 registerResult.className = 'register-error';
-                registerResult.textContent = '❌ ' + (data.error || 'Registration failed');
+                registerResult.textContent = '' + (data.error || 'Registration failed');
             }
         } catch (err) {
             registerResult.style.display = 'block';
             registerResult.className = 'register-error';
-            registerResult.textContent = '❌ Network error: ' + err.message;
+            registerResult.textContent = 'Network error: ' + err.message;
         } finally {
             registerBtn.disabled = false;
-            registerBtn.innerHTML = '<span class="btn-icon">⛓️</span> Register to Blockchain';
+            registerBtn.innerHTML = '<span class="btn-icon"></span> Register to Blockchain';
         }
     });
 })();
