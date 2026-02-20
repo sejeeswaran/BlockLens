@@ -1,8 +1,6 @@
+flask
 Pillow
-web3
-opencv-python-headless
 numpy
 exifread
-python-dotenv
 google-generativeai
-flask
+web3
