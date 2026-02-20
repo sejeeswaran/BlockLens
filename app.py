@@ -62,7 +62,7 @@ def load_models():
     for model_name, task in model_configs:
         try:
             models[model_name] = pipeline(task, model=model_name)
-        except Exception as e:
+        except Exception:
             models[model_name] = None
 
     return models
@@ -116,7 +116,7 @@ def metadata_analysis(image_file):
         st.error(f"Metadata Analysis failed: {e}")
         return True, "Unknown"
 
-def detect_screenshot_heuristic(image, noise_score, software_tag):
+def detect_screenshot_heuristic(_image, noise_score, software_tag):
     is_screenshot = False
     confidence = 0
 
@@ -134,127 +134,117 @@ def detect_screenshot_heuristic(image, noise_score, software_tag):
 
     return is_screenshot, confidence
 
-def analyze_image(image_file):
-    image_file.seek(0)
-    image = Image.open(image_file)
-
+def _run_model_ensemble(image):
     model_opinions = {}
     votes = []
-
     for model_name, pipe in pipes.items():
-        if pipe:
-            try:
-                results = pipe(image)
-                top_result = results[0]
-                label = top_result['label']
-                score = top_result['score']
-
-                if 'real' in label.lower() or 'authentic' in label.lower():
-                    decision = "real_image"
-                else:
-                    decision = "ai_generated"
-
-                votes.append(decision)
-                reasoning = f"Predicted '{label}' with confidence {score:.2f} based on visual patterns and model training."
-                model_opinions[model_name] = {"decision": decision, "reasoning": reasoning}
-
-            except Exception as e:
-                model_opinions[model_name] = {"decision": "unknown", "reasoning": "Model failed to analyze"}
-        else:
+        if not pipe:
             model_opinions[model_name] = {"decision": "unknown", "reasoning": "Model not loaded"}
-
-    if gemini_model:
+            continue
         try:
-            image_bytes = image_file.getvalue()
-            mime_type = image_file.type if hasattr(image_file, 'type') else "image/jpeg"
-            GEMINI_IMAGE_PROMPT = """
-Analyze this image and classify it as ONE of these 3 categories ONLY:
+            results = pipe(image)
+            top_result = results[0]
+            label = top_result['label']
+            score = top_result['score']
+            decision = "real_image" if 'real' in label.lower() or 'authentic' in label.lower() else "ai_generated"
+            votes.append(decision)
+            reasoning = f"Predicted '{label}' with confidence {score:.2f} based on visual patterns and model training."
+            model_opinions[model_name] = {"decision": decision, "reasoning": reasoning}
+        except Exception:
+            model_opinions[model_name] = {"decision": "unknown", "reasoning": "Model failed to analyze"}
+    return model_opinions, votes
 
-**real_image** - Authentic camera photo (phone/camera taken)
-**ai_generated** - AI-created/synthesized image
-**screenshot** - Screen capture/digital composite
+def _run_gemini_analysis(image_file, model_opinions, votes):
+    if not gemini_model:
+        return
+    try:
+        image_bytes = image_file.getvalue()
+        mime_type = image_file.type if hasattr(image_file, 'type') else "image/jpeg"
+        gemini_prompt = (
+            'Analyze this image and classify it as ONE of these 3 categories ONLY:\n'
+            '**real_image** - Authentic camera photo (phone/camera taken)\n'
+            '**ai_generated** - AI-created/synthesized image\n'
+            '**screenshot** - Screen capture/digital composite\n\n'
+            'LOOK FOR THESE CLUES:\n'
+            '- **Screenshot**: UI elements, perfect edges, compression blocks, browser chrome, low noise variance\n'
+            '- **AI Generated**: Anatomical errors (extra fingers, weird hands), symmetrical artifacts, unnatural lighting/shadows, blurry text/logos\n'
+            '- **Real Photo**: Natural noise/grain, lens distortion, organic lighting, camera sensor artifacts\n\n'
+            'OUTPUT EXACTLY:\n'
+            '{\n  "decision": "real_image" | "ai_generated" | "screenshot",\n'
+            '  "confidence": 85,  // 0-100\n'
+            '  "evidence": "2-3 specific visual clues you saw"\n}\n\n'
+            'NEVER say "uncertain" - pick your best guess with realistic confidence.'
+        )
+        response = gemini_model.generate_content([
+            gemini_prompt,
+            {"inline_data": {
+                "mime_type": mime_type,
+                "data": base64.b64encode(image_bytes).decode()
+            }}
+        ])
+        text = re.sub(r'```json\s*', '', response.text).strip('`').strip()
+        result = json.loads(text)
+        model_opinions["Gemini"] = {"decision": result["decision"], "reasoning": result["evidence"]}
+        votes.append(result["decision"])
+    except Exception as exc:
+        error_msg = str(exc)
+        if "429" in error_msg:
+            model_opinions["Gemini"] = {
+                "decision": "unknown",
+                "reasoning": "⚠️ Daily AI Quota Exceeded. The Teacher is taking a break. Please wait or check billing."
+            }
+        else:
+            model_opinions["Gemini"] = {
+                "decision": "unknown",
+                "reasoning": f"Gemini failed: {error_msg}"
+            }
 
-LOOK FOR THESE CLUES:
-- **Screenshot**: UI elements, perfect edges, compression blocks, browser chrome, low noise variance
-- **AI Generated**: Anatomical errors (extra fingers, weird hands), symmetrical artifacts, unnatural lighting/shadows, blurry text/logos
-- **Real Photo**: Natural noise/grain, lens distortion, organic lighting, camera sensor artifacts
-
-OUTPUT EXACTLY:
-{
-  "decision": "real_image" | "ai_generated" | "screenshot",
-  "confidence": 85,  // 0-100
-  "evidence": "2-3 specific visual clues you saw"
-}
-
-NEVER say "uncertain" - pick your best guess with realistic confidence.
-"""
-            response = gemini_model.generate_content([
-                GEMINI_IMAGE_PROMPT,
-                {"inline_data": {
-                    "mime_type": mime_type,
-                    "data": base64.b64encode(image_bytes).decode()
-                }}
-            ])
-            text = re.sub(r'```json\s*', '', response.text).strip('`').strip()
-            result = json.loads(text)
-            model_opinions["Gemini"] = {"decision": result["decision"], "reasoning": result["evidence"]}
-            votes.append(result["decision"])
-        except Exception as e:
-            error_msg = str(e)
-            if "429" in error_msg:
-                model_opinions["Gemini"] = {
-                    "decision": "unknown", 
-                    "reasoning": "⚠️ Daily AI Quota Exceeded. The Teacher is taking a break. Please wait or check billing."
-                }
-            else:
-                model_opinions["Gemini"] = {
-                    "decision": "unknown", 
-                    "reasoning": f"Gemini failed: {error_msg}"
-                }
-
-    ela_score, ela_image = ela_analysis(image)
-    noise_score = noise_analysis(image)
-    meta_ok, software = metadata_analysis(image_file)
-
-    is_screenshot, screenshot_conf = detect_screenshot_heuristic(image, noise_score, software)
-
-    ai_probs = []
-    for m in model_opinions.values():
-        if m["decision"] == "ai_generated":
-            ai_probs.append(1.0) 
-        elif m["decision"] == "real_image":
-            ai_probs.append(0.0)
-    
-    avg_ai_prob = sum(ai_probs) / len(ai_probs) if ai_probs else 0.5
-    
-    meta_score = 1.0 if not meta_ok else 0.0
-    signals = [ela_score, noise_score, screenshot_conf/100.0, avg_ai_prob, meta_score]
-
-    blocklens_verdict, blocklens_conf = blocklens_manager.predict(image, signals)
-
+def _determine_final_verdict(model_opinions, votes, image, signals):
     gemini_result = model_opinions.get("Gemini", {})
     gemini_decision = gemini_result.get("decision", "unknown")
 
     if gemini_decision != "unknown":
         final_decision = gemini_decision
-        confidence = 100 
-        supporting_reasoning = f"{gemini_result.get('reasoning', '')}"
-        
+        confidence = 100
+        supporting_reasoning = gemini_result.get('reasoning', '')
         loss = blocklens_manager.train_step(image, signals, gemini_decision)
         if loss:
             print(f"BlockLens Model trained. Loss: {loss:.4f}")
-            
+    elif votes:
+        vote_counts = Counter(votes)
+        most_common = vote_counts.most_common(1)[0]
+        final_decision = most_common[0]
+        confidence = int((most_common[1] / len(votes)) * 100)
+        supporting_reasoning = f"Gemini unavailable. Consensus reached: {final_decision}."
     else:
-        if votes:
-            vote_counts = Counter(votes)
-            most_common = vote_counts.most_common(1)[0]
-            final_decision = most_common[0]
-            confidence = int((most_common[1] / len(votes)) * 100)
-            supporting_reasoning = f"Gemini unavailable. Consensus reached: {final_decision}."
-        else:
-            final_decision = "unknown"
-            confidence = 0
-            supporting_reasoning = "Insufficient data."
+        final_decision = "unknown"
+        confidence = 0
+        supporting_reasoning = "Insufficient data."
+
+    return final_decision, confidence, supporting_reasoning, gemini_decision
+
+def analyze_image(image_file):
+    image_file.seek(0)
+    image = Image.open(image_file)
+
+    model_opinions, votes = _run_model_ensemble(image)
+    _run_gemini_analysis(image_file, model_opinions, votes)
+
+    ela_score, ela_image = ela_analysis(image)
+    noise_score = noise_analysis(image)
+    meta_ok, software = metadata_analysis(image_file)
+    _, screenshot_conf = detect_screenshot_heuristic(image, noise_score, software)
+
+    ai_probs = [1.0 if m["decision"] == "ai_generated" else 0.0
+                for m in model_opinions.values() if m["decision"] in ("ai_generated", "real_image")]
+    avg_ai_prob = sum(ai_probs) / len(ai_probs) if ai_probs else 0.5
+    meta_score = 1.0 if not meta_ok else 0.0
+    signals = [ela_score, noise_score, screenshot_conf / 100.0, avg_ai_prob, meta_score]
+
+    blocklens_verdict, blocklens_conf = blocklens_manager.predict(image, signals)
+    final_decision, confidence, supporting_reasoning, gemini_decision = _determine_final_verdict(
+        model_opinions, votes, image, signals
+    )
 
     return {
         "final_decision": final_decision,
@@ -396,7 +386,7 @@ if uploaded_file is not None:
                         display_hash = tx_hash if tx_hash.startswith('0x') else f'0x{tx_hash}'
                         st.write("**Transaction Hash:**")
                         st.code(display_hash, language="text")
-                        st.markdown(f"**Check Transaction:** [Open Sepolia Etherscan](https://sepolia.etherscan.io/) and paste the hash above")
+                        st.markdown("**Check Transaction:** [Open Sepolia Etherscan](https://sepolia.etherscan.io/) and paste the hash above")
                         st.info("Transaction successfully recorded on blockchain for permanent verification!")
                     else:
                         st.error("Registration failed. Check console logs for details.")
