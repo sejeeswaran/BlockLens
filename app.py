@@ -31,6 +31,7 @@ if genai:
 
 st.set_page_config(
     page_title="BlockLens",
+    page_icon="blocklens.png",
     initial_sidebar_state="collapsed"
 )
 
