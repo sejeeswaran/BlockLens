@@ -4,22 +4,54 @@ import json
 import hashlib
 import base64
 import re
+import traceback
 
 from flask import Flask, request, jsonify
-import numpy as np
 
 app = Flask(__name__)
 
 
+# ---------------------------------------------------------------------------
+# Health check — useful for debugging on Vercel
+# ---------------------------------------------------------------------------
+
+@app.route('/api/health', methods=['GET'])
+def health():
+    """Health check endpoint to verify the function is running."""
+    status = {"status": "ok", "imports": {}}
+
+    # Check each dependency
+    for mod_name in ['numpy', 'PIL', 'cv2', 'exifread', 'google.generativeai', 'web3']:
+        try:
+            __import__(mod_name)
+            status["imports"][mod_name] = "ok"
+        except Exception as e:
+            status["imports"][mod_name] = str(e)
+
+    # Check env vars (masked)
+    status["env"] = {
+        "GEMINI_API_KEY": "set" if os.environ.get("GEMINI_API_KEY") else "missing",
+        "RPC_URL": "set" if os.environ.get("RPC_URL") else "missing",
+        "CONTRACT_ADDRESS": "set" if os.environ.get("CONTRACT_ADDRESS") else "missing",
+        "PRIVATE_KEY": "set" if os.environ.get("PRIVATE_KEY") else "missing",
+    }
+
+    return jsonify(status)
+
+
+# ---------------------------------------------------------------------------
+# Lazy helpers
+# ---------------------------------------------------------------------------
+
 def _get_gemini_model():
-    """Lazy-load Gemini model to avoid cold-start issues."""
+    """Lazy-load Gemini model."""
     try:
         import google.generativeai as genai
         api_key = os.environ.get("GEMINI_API_KEY")
         if not api_key:
             return None
         genai.configure(api_key=api_key)
-        return genai.GenerativeModel('gemini-2.5-flash')
+        return genai.GenerativeModel('gemini-2.0-flash')
     except Exception:
         return None
 
@@ -37,7 +69,10 @@ def _get_blockchain_manager():
         contract = None
         contract_address = os.environ.get("CONTRACT_ADDRESS")
         if contract_address:
-            abi_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "abi.json")
+            abi_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "abi.json")
+            if not os.path.exists(abi_path):
+                # Try current directory as fallback
+                abi_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "abi.json")
             if os.path.exists(abi_path):
                 with open(abi_path, 'r') as f:
                     contract_abi = json.load(f)
@@ -57,19 +92,19 @@ def _get_blockchain_manager():
 
 
 # ---------------------------------------------------------------------------
-# Image forensics (lightweight, no ML models needed)
+# Image forensics (all imports lazy, all wrapped in try/except)
 # ---------------------------------------------------------------------------
 
 def _ela_analysis(image):
     """Error Level Analysis using Pillow only."""
     try:
-        from PIL import ImageChops, ImageEnhance
+        from PIL import ImageChops, ImageEnhance, Image as PILImage
+        import numpy as np
 
         image = image.convert('RGB')
         temp = io.BytesIO()
         image.save(temp, 'JPEG', quality=90)
         temp.seek(0)
-        from PIL import Image as PILImage
         compressed = PILImage.open(temp)
 
         ela = ImageChops.difference(image, compressed)
@@ -81,7 +116,6 @@ def _ela_analysis(image):
         ela_array = np.array(ela)
         avg_diff = float(np.mean(ela_array))
 
-        # Convert ELA image to base64 for frontend
         buf = io.BytesIO()
         ela.save(buf, format='PNG')
         ela_b64 = base64.b64encode(buf.getvalue()).decode()
@@ -92,12 +126,19 @@ def _ela_analysis(image):
 
 
 def _noise_analysis(image):
-    """Noise variance analysis using OpenCV."""
+    """Noise variance analysis. Uses OpenCV if available, falls back to Pillow."""
     try:
-        import cv2
-        gray = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2GRAY)
-        noise = cv2.absdiff(gray, cv2.GaussianBlur(gray, (5, 5), 0))
-        return float(np.var(noise))
+        import numpy as np
+        try:
+            import cv2
+            gray = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2GRAY)
+            noise = cv2.absdiff(gray, cv2.GaussianBlur(gray, (5, 5), 0))
+            return float(np.var(noise))
+        except ImportError:
+            # Fallback: use Pillow for basic noise estimation
+            gray = image.convert('L')
+            arr = np.array(gray, dtype=float)
+            return float(np.var(arr - np.mean(arr)))
     except Exception:
         return 0
 
@@ -187,88 +228,95 @@ def _run_gemini(image_bytes, mime_type="image/jpeg"):
 # API Routes
 # ---------------------------------------------------------------------------
 
-@app.route('/api/analyze', methods=['POST'])
+@app.route('/api/analyze', methods=['GET', 'POST'])
 def analyze():
     """Analyze an uploaded image."""
-    if 'image' not in request.files:
-        return jsonify({"error": "No image uploaded"}), 400
-
-    file = request.files['image']
-    image_bytes = file.read()
-
-    if not image_bytes:
-        return jsonify({"error": "Empty file"}), 400
+    if request.method == 'GET':
+        return jsonify({"message": "BlockLens API. Send a POST request with an image file."}), 200
 
     try:
-        from PIL import Image
-        image = Image.open(io.BytesIO(image_bytes))
-    except Exception:
-        return jsonify({"error": "Invalid image file"}), 400
+        if 'image' not in request.files:
+            return jsonify({"error": "No image uploaded"}), 400
 
-    # Compute image hash
-    image_hash = "0x" + hashlib.sha256(image_bytes).hexdigest()
+        file = request.files['image']
+        image_bytes = file.read()
 
-    # Determine mime type
-    mime_type = file.content_type or "image/jpeg"
+        if not image_bytes:
+            return jsonify({"error": "Empty file"}), 400
 
-    # Run all analyses
-    gemini_result = _run_gemini(image_bytes, mime_type)
-    ela_score, ela_image_b64 = _ela_analysis(image)
-    noise_score = _noise_analysis(image)
-    meta_ok, software = _metadata_analysis(image_bytes)
-    screenshot_conf = _screenshot_heuristic(noise_score, software)
+        try:
+            from PIL import Image
+            image = Image.open(io.BytesIO(image_bytes))
+            image.load()  # Force load to catch corrupt images
+        except Exception:
+            return jsonify({"error": "Invalid image file"}), 400
 
-    # Determine final verdict
-    if gemini_result["decision"] != "unknown":
-        final_decision = gemini_result["decision"]
-        confidence = gemini_result.get("confidence", 85)
-        reasoning = gemini_result.get("reasoning", "")
-    else:
-        # Fallback to forensic heuristics
-        if screenshot_conf >= 70:
-            final_decision = "screenshot"
-            confidence = screenshot_conf
-            reasoning = "Detected via noise/metadata heuristics (Gemini unavailable)."
-        elif not meta_ok:
-            final_decision = "ai_generated"
-            confidence = 60
-            reasoning = f"Editing software detected: {software} (Gemini unavailable)."
+        # Compute image hash
+        image_hash = "0x" + hashlib.sha256(image_bytes).hexdigest()
+
+        # Determine mime type
+        mime_type = file.content_type or "image/jpeg"
+
+        # Run all analyses (each is individually wrapped in try/except)
+        gemini_result = _run_gemini(image_bytes, mime_type)
+        ela_score, ela_image_b64 = _ela_analysis(image)
+        noise_score = _noise_analysis(image)
+        meta_ok, software = _metadata_analysis(image_bytes)
+        screenshot_conf = _screenshot_heuristic(noise_score, software)
+
+        # Determine final verdict
+        if gemini_result["decision"] != "unknown":
+            final_decision = gemini_result["decision"]
+            confidence = gemini_result.get("confidence", 85)
+            reasoning = gemini_result.get("reasoning", "")
         else:
-            final_decision = "real_image"
-            confidence = 50
-            reasoning = "No manipulation indicators found (Gemini unavailable)."
+            if screenshot_conf >= 70:
+                final_decision = "screenshot"
+                confidence = screenshot_conf
+                reasoning = "Detected via noise/metadata heuristics (Gemini unavailable)."
+            elif not meta_ok:
+                final_decision = "ai_generated"
+                confidence = 60
+                reasoning = f"Editing software detected: {software} (Gemini unavailable)."
+            else:
+                final_decision = "real_image"
+                confidence = 50
+                reasoning = "No manipulation indicators found (Gemini unavailable)."
 
-    return jsonify({
-        "image_hash": image_hash,
-        "verdict": final_decision,
-        "confidence": confidence,
-        "reasoning": reasoning,
-        "gemini_available": gemini_result["decision"] != "unknown",
-        "forensics": {
-            "ela_score": ela_score,
-            "ela_image": ela_image_b64,
-            "noise_score": noise_score,
-            "metadata_clean": meta_ok,
-            "software": software,
-            "screenshot_confidence": screenshot_conf
-        }
-    })
+        return jsonify({
+            "image_hash": image_hash,
+            "verdict": final_decision,
+            "confidence": confidence,
+            "reasoning": reasoning,
+            "gemini_available": gemini_result["decision"] != "unknown",
+            "forensics": {
+                "ela_score": ela_score,
+                "ela_image": ela_image_b64,
+                "noise_score": noise_score,
+                "metadata_clean": meta_ok,
+                "software": software,
+                "screenshot_confidence": screenshot_conf
+            }
+        })
+
+    except Exception as exc:
+        return jsonify({"error": str(exc), "trace": traceback.format_exc()}), 500
 
 
 @app.route('/api/blockchain/check', methods=['POST'])
 def blockchain_check():
     """Check if an image hash has already been registered."""
-    data = request.get_json()
-    if not data or 'image_hash' not in data:
-        return jsonify({"error": "Missing image_hash"}), 400
-
-    image_hash = data['image_hash']
-    _w3, contract, _account = _get_blockchain_manager()
-
-    if not contract:
-        return jsonify({"registered": False, "error": "Blockchain not connected"})
-
     try:
+        data = request.get_json()
+        if not data or 'image_hash' not in data:
+            return jsonify({"error": "Missing image_hash"}), 400
+
+        image_hash = data['image_hash']
+        _w3, contract, _account = _get_blockchain_manager()
+
+        if not contract:
+            return jsonify({"registered": False, "error": "Blockchain not connected"})
+
         result = contract.functions.getVerdict(image_hash).call()
         timestamp = result[5]
         if timestamp == 0:
@@ -293,17 +341,17 @@ def blockchain_check():
 @app.route('/api/blockchain/register', methods=['POST'])
 def blockchain_register():
     """Register a verdict on the blockchain."""
-    data = request.get_json()
-    required = ('image_hash', 'verdict', 'confidence')
-    if not data or not all(k in data for k in required):
-        return jsonify({"error": "Missing required fields"}), 400
-
-    w3, contract, account = _get_blockchain_manager()
-
-    if not w3 or not contract or not account:
-        return jsonify({"error": "Blockchain not fully configured"}), 500
-
     try:
+        data = request.get_json()
+        required = ('image_hash', 'verdict', 'confidence')
+        if not data or not all(k in data for k in required):
+            return jsonify({"error": "Missing required fields"}), 400
+
+        w3, contract, account = _get_blockchain_manager()
+
+        if not w3 or not contract or not account:
+            return jsonify({"error": "Blockchain not fully configured"}), 500
+
         image_hash = data['image_hash']
         verdict_map = {
             "real_image": "Real",

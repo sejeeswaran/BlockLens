@@ -119,7 +119,7 @@
 
             if (!response.ok) {
                 const err = await response.json().catch(() => ({}));
-                throw new Error(err.error || 'Analysis failed');
+                throw new Error(err.error || err.trace || 'Analysis failed (HTTP ' + response.status + ')');
             }
 
             analysisData = await response.json();

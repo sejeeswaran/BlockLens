@@ -1,14 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BlockLens — AI Image Detection & Blockchain Verification</title>
-    <meta name="description" content="BlockLens uses AI-powered analysis and blockchain verification to detect AI-generated images, screenshots, and authentic photos.">
+    <meta name="description"
+        content="BlockLens uses AI-powered analysis and blockchain verification to detect AI-generated images, screenshots, and authentic photos.">
     <link rel="icon" type="image/png" href="/blocklens.png">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="/style.css">
 </head>
+
 <body>
     <div class="bg-grid"></div>
 
@@ -28,7 +32,7 @@
         <!-- Upload Section -->
         <section class="card upload-card" id="upload-section">
             <h2 class="section-title">
-                <span class="icon">🔍</span>
+                <span class="icon"></span>
                 Analyze an Image
             </h2>
             <div class="dropzone" id="dropzone">
@@ -46,7 +50,7 @@
                 <img id="preview-image" alt="Uploaded image preview">
                 <div class="image-hash" id="image-hash"></div>
                 <button class="btn btn-primary" id="analyze-btn">
-                    <span class="btn-icon">⚡</span>
+                    <span class="btn-icon"></span>
                     Analyze Image
                 </button>
                 <button class="btn btn-ghost" id="clear-btn">Clear</button>
@@ -63,7 +67,7 @@
         <!-- Blockchain Status -->
         <section class="card" id="blockchain-status" style="display:none;">
             <h2 class="section-title">
-                <span class="icon">⛓️</span>
+                <span class="icon"></span>
                 Blockchain Status
             </h2>
             <div id="blockchain-content"></div>
@@ -72,7 +76,7 @@
         <!-- Results -->
         <section class="card results-card" id="results-section" style="display:none;">
             <h2 class="section-title">
-                <span class="icon">📊</span>
+                <span class="icon"></span>
                 Analysis Results
             </h2>
 
@@ -97,10 +101,11 @@
 
             <!-- Blockchain Registration -->
             <div class="register-section" id="register-section" style="display:none;">
-                <h3 class="register-title">📝 Register on Blockchain</h3>
-                <p class="register-desc">Permanently record this verdict on Ethereum Sepolia for public verification.</p>
+                <h3 class="register-title">Register on Blockchain</h3>
+                <p class="register-desc">Permanently record this verdict on Ethereum Sepolia for public verification.
+                </p>
                 <button class="btn btn-blockchain" id="register-btn">
-                    <span class="btn-icon">⛓️</span>
+                    <span class="btn-icon"></span>
                     Register to Blockchain
                 </button>
                 <div id="register-result" style="display:none;"></div>
@@ -116,4 +121,5 @@
 
     <script src="/script.js"></script>
 </body>
+
 </html>
