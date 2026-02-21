@@ -725,7 +725,7 @@ if uploaded_file is not None:
 
         st.markdown(f"""
         <div class="bc-info">
-            <p>⛓️ <strong>Already registered on blockchain!</strong></p>
+            <p><strong>Already registered on blockchain!</strong></p>
             <p><strong>Status:</strong> {existing_verdict['status']}</p>
             <p><strong>Confidence:</strong> {existing_verdict['confidence']}%</p>
             <p><strong>Timestamp:</strong> {ts_str}</p>
