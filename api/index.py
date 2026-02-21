@@ -88,7 +88,11 @@ def _run_gemini(image_bytes, mime_type="image/jpeg"):
                 "data": base64.b64encode(image_bytes).decode()
             }}
         ])
-        text = re.sub(r'```json\s*', '', response.text).strip('`').strip()
+        text = response.text
+        # Strip markdown code fences if present
+        text = re.sub(r'```json\s*', '', text)
+        text = re.sub(r'```\s*', '', text)
+        text = text.strip('`').strip()
         result = json.loads(text)
         return {
             "decision": result.get("decision", "unknown"),
@@ -277,6 +281,7 @@ def analyze():
             "confidence": confidence,
             "reasoning": reasoning,
             "gemini_available": gemini_result["decision"] != "unknown",
+            "gemini_error": gemini_result.get("reasoning", "") if gemini_result["decision"] == "unknown" else None,
             "forensics": {
                 "ela_score": ela_score,
                 "ela_image": ela_b64,
