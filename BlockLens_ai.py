@@ -55,7 +55,7 @@ class BlockLensManager:
     def __init__(self):
         self.extractor = FeatureExtractor()
         self.blocklens_model = BlockLensDistillationModel(num_supporting_signals=5).to(DEVICE)
-        self.optimizer = optim.Adam(self.blocklens_model.parameters(), lr=0.001)
+        self.optimizer = optim.Adam(self.blocklens_model.parameters(), lr=0.001, weight_decay=1e-4)
         self.criterion = nn.CrossEntropyLoss()
         self.labels_map = {"real_image": 0, "ai_generated": 1, "screenshot": 2}
         self.idx_to_label = {0: "real_image", 1: "ai_generated", 2: "screenshot"}

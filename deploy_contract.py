@@ -4,6 +4,8 @@ from web3 import Web3
 from solcx import compile_standard, install_solc
 from dotenv import load_dotenv
 
+BLOCKLENS_SOL = "BlockLens.sol"
+
 # Load env variables
 load_dotenv()
 
@@ -18,14 +20,14 @@ def deploy():
     print("Installing Solidity Compiler...")
     install_solc('0.8.0')
 
-    print("Compiling BlockLens.sol...")
-    with open("BlockLens.sol", "r") as file:
+    print(f"Compiling {BLOCKLENS_SOL}...")
+    with open(BLOCKLENS_SOL, "r") as file:
         blocklens_file_content = file.read()
 
     compiled_sol = compile_standard(
         {
             "language": "Solidity",
-            "sources": {"BlockLens.sol": {"content": blocklens_file_content}},
+            "sources": {BLOCKLENS_SOL: {"content": blocklens_file_content}},
             "settings": {
                 "outputSelection": {
                     "*": {
@@ -37,8 +39,8 @@ def deploy():
         solc_version="0.8.0",
     )
 
-    bytecode = compiled_sol["contracts"]["BlockLens.sol"]["BlockLensRegistry"]["evm"]["bytecode"]["object"]
-    abi = compiled_sol["contracts"]["BlockLens.sol"]["BlockLensRegistry"]["abi"]
+    bytecode = compiled_sol["contracts"][BLOCKLENS_SOL]["BlockLensRegistry"]["evm"]["bytecode"]["object"]
+    abi = compiled_sol["contracts"][BLOCKLENS_SOL]["BlockLensRegistry"]["abi"]
 
     # Save ABI
     with open("abi.json", "w") as f:
@@ -56,10 +58,10 @@ def deploy():
     print(f"Deploying from address: {my_address}")
 
     # Build Transaction
-    BlockLens = w3.eth.contract(abi=abi, bytecode=bytecode)
+    block_lens = w3.eth.contract(abi=abi, bytecode=bytecode)
     nonce = w3.eth.get_transaction_count(my_address)
 
-    transaction = BlockLens.constructor().build_transaction({
+    transaction = block_lens.constructor().build_transaction({
         "chainId": chain_id,
         "from": my_address,
         "nonce": nonce,

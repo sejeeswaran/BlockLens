@@ -10,6 +10,8 @@ import base64
 import re
 import traceback
 
+ABI_FILENAME = "abi.json"
+
 # Flask is the only third-party top-level import
 try:
     from flask import Flask, request, jsonify
@@ -189,9 +191,9 @@ def _get_blockchain():
         if contract_address:
             # Try multiple paths for abi.json
             possible_paths = [
-                os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "abi.json"),
-                os.path.join(os.path.dirname(os.path.abspath(__file__)), "abi.json"),
-                "abi.json",
+                os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ABI_FILENAME),
+                os.path.join(os.path.dirname(os.path.abspath(__file__)), ABI_FILENAME),
+                ABI_FILENAME,
             ]
             for abi_path in possible_paths:
                 if os.path.exists(abi_path):
