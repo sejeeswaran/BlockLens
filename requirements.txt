@@ -1,6 +1,9 @@
-flask
+streamlit
 Pillow
 numpy
 exifread
 google-generativeai
 web3
+python-dotenv
+torch
+torchvision

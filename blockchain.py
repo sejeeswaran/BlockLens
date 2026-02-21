@@ -6,6 +6,15 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+
+def _get_secret(key, default=None):
+    """Get secret from st.secrets (Streamlit Cloud) or os.getenv (local)."""
+    try:
+        import streamlit as st
+        return st.secrets.get(key, os.getenv(key, default))
+    except Exception:
+        return os.getenv(key, default)
+
 class BlockchainManager:
     def __init__(self):
         self.w3 = None
@@ -16,7 +25,7 @@ class BlockchainManager:
 
     def setup_connection(self):
         try:
-            rpc_url = os.getenv("RPC_URL", "https://ethereum-sepolia-rpc.publicnode.com")
+            rpc_url = _get_secret("RPC_URL", "https://ethereum-sepolia-rpc.publicnode.com")
             self.w3 = Web3(Web3.HTTPProvider(rpc_url))
             
             if not self.w3.is_connected():
@@ -24,7 +33,7 @@ class BlockchainManager:
                 return
 
             self.connected = True
-            contract_address = os.getenv("CONTRACT_ADDRESS")
+            contract_address = _get_secret("CONTRACT_ADDRESS")
 
             if contract_address:
                 try:
@@ -35,7 +44,7 @@ class BlockchainManager:
                 except (json.JSONDecodeError, FileNotFoundError) as e:
                     print(f"⚠️ Error loading contract: {e}")
             
-            private_key = os.getenv("PRIVATE_KEY")
+            private_key = _get_secret("PRIVATE_KEY")
             if private_key:
                 if not private_key.startswith("0x"):
                     private_key = "0x" + private_key
