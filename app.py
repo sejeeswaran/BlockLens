@@ -20,6 +20,7 @@ from BlockLens_ai import BlockLensManager
 load_dotenv()
 
 LOGO_FILENAME = "blocklens.png"
+DIV_CLOSE = "</div>"
 
 
 def get_secret(key, default=None):
@@ -706,7 +707,7 @@ if uploaded_file is not None:
             }
             st.session_state.last_uploaded_file = uploaded_file.name
 
-st.markdown('</div>', unsafe_allow_html=True)
+st.markdown(DIV_CLOSE, unsafe_allow_html=True)
 
 # ─── Blockchain Status (existing registration) ────────────────────────────────
 if uploaded_file is not None:
@@ -733,7 +734,7 @@ if uploaded_file is not None:
             <p style="margin-top:8px"><a href="https://sepolia.etherscan.io/address/{existing_verdict['registrar']}" target="_blank" style="color: var(--accent); text-decoration: none;">View on Etherscan →</a></p>
         </div>
         """, unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown(DIV_CLOSE, unsafe_allow_html=True)
 
 # ─── Results Section ───────────────────────────────────────────────────────────
 if st.session_state.get('analysis_results'):
@@ -897,4 +898,4 @@ if st.session_state.get('analysis_results'):
                 <div class="register-error">Cannot register: Wallet not connected or configured.</div>
                 """, unsafe_allow_html=True)
 
-    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown(DIV_CLOSE, unsafe_allow_html=True)
