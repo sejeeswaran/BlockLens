@@ -19,6 +19,8 @@ from BlockLens_ai import BlockLensManager
 
 load_dotenv()
 
+LOGO_FILENAME = "blocklens.png"
+
 
 def get_secret(key, default=None):
     """Get secret from st.secrets (Streamlit Cloud) or os.getenv (local)."""
@@ -38,7 +40,7 @@ if genai:
 # ─── Page Config ───────────────────────────────────────────────────────────────
 st.set_page_config(
     page_title="BlockLens",
-    page_icon="blocklens.png",
+    page_icon=LOGO_FILENAME,
     layout="centered",
     initial_sidebar_state="collapsed"
 )
@@ -653,8 +655,8 @@ def img_to_b64(image):
 
 # Header
 logo_b64 = ""
-if os.path.exists("blocklens.png"):
-    with open("blocklens.png", "rb") as f:
+if os.path.exists(LOGO_FILENAME):
+    with open(LOGO_FILENAME, "rb") as f:
         logo_b64 = base64.b64encode(f.read()).decode()
 
 st.markdown(f"""
