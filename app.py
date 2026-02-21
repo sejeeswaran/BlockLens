@@ -881,12 +881,18 @@ if st.session_state.get('analysis_results'):
 
                     if tx_hash:
                         display_hash = tx_hash if tx_hash.startswith('0x') else f'0x{tx_hash}'
-                        st.markdown(f"""
-                        <div class="register-success">
+                        st.markdown("""
+                        <div class="register-success" style="padding-bottom: 0.5rem; border-bottom: none; border-bottom-left-radius: 0; border-bottom-right-radius: 0; margin-bottom: 0;">
                             <p><strong>Successfully registered!</strong></p>
-                            <p>Transaction Hash:</p>
-                            <span class="bc-hash">{display_hash}</span>
-                            <p style="margin-top:8px"><a href="https://sepolia.etherscan.io/" target="_blank" style="color: var(--green); text-decoration: none;">View on Sepolia Etherscan →</a></p>
+                            <p style="margin-top:8px">Transaction Hash:</p>
+                        </div>
+                        """, unsafe_allow_html=True)
+                        
+                        st.code(display_hash, language="text")
+                        
+                        st.markdown(f"""
+                        <div class="register-success" style="padding-top: 0.5rem; border-top: none; border-top-left-radius: 0; border-top-right-radius: 0; margin-top: -1rem;">
+                            <p><a href="https://sepolia.etherscan.io/tx/{display_hash}" target="_blank" style="color: var(--green); text-decoration: none;">View on Sepolia Etherscan →</a></p>
                         </div>
                         """, unsafe_allow_html=True)
                     else:
