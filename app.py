@@ -689,7 +689,7 @@ if uploaded_file is not None:
 
     # Buttons
     col1, col2 = st.columns([1, 1])
-    analyze_clicked = col1.button("🔍 Analyze Image", use_container_width=True, type="primary")
+    analyze_clicked = col1.button("Analyze Image", use_container_width=True, type="primary")
     clear_clicked = col2.button("Clear", use_container_width=True)
 
     if clear_clicked:
@@ -717,7 +717,7 @@ if uploaded_file is not None:
 
     if existing_verdict:
         st.markdown('<div class="card">', unsafe_allow_html=True)
-        st.markdown('<div class="section-title">⛓️ Blockchain Status</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-title">Blockchain Status</div>', unsafe_allow_html=True)
 
         from datetime import datetime
         ts = existing_verdict.get('timestamp', 0)
@@ -825,11 +825,11 @@ if st.session_state.get('analysis_results'):
     col_f1, col_f2, col_f3 = st.columns(3)
     override_verdict = None
 
-    if col_f1.button("✅ Real Photo"):
+    if col_f1.button("Real Photo"):
         override_verdict = "real_image"
-    if col_f2.button("🤖 AI Generated"):
+    if col_f2.button("AI Generated"):
         override_verdict = "ai_generated"
-    if col_f3.button("📸 Screenshot"):
+    if col_f3.button("Screenshot"):
         override_verdict = "screenshot"
 
     if override_verdict:
@@ -862,7 +862,7 @@ if st.session_state.get('analysis_results'):
             """, unsafe_allow_html=True)
 
             if bc.connected and bc.account:
-                if st.button("⛓️ Register to Blockchain", type="primary"):
+                if st.button("Register to Blockchain", type="primary"):
                     with st.spinner("Recording to Blockchain..."):
                         blockchain_verdict = {
                             "real_image": "Real",

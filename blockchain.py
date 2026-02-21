@@ -29,7 +29,7 @@ class BlockchainManager:
             self.w3 = Web3(Web3.HTTPProvider(rpc_url))
             
             if not self.w3.is_connected():
-                print("❌ Failed to connect to RPC.")
+                print("Failed to connect to RPC.")
                 return
 
             self.connected = True
@@ -42,7 +42,7 @@ class BlockchainManager:
                     checksum_address = self.w3.to_checksum_address(contract_address)
                     self.contract = self.w3.eth.contract(address=checksum_address, abi=contract_abi)
                 except (json.JSONDecodeError, FileNotFoundError) as e:
-                    print(f"⚠️ Error loading contract: {e}")
+                    print(f"Error loading contract: {e}")
             
             private_key = _get_secret("PRIVATE_KEY")
             if private_key:
@@ -51,7 +51,7 @@ class BlockchainManager:
                 self.account = self.w3.eth.account.from_key(private_key)
 
         except Exception as e:
-            print(f"❌ Blockchain setup failed: {e}")
+            print(f"Blockchain setup failed: {e}")
 
     def hash_image(self, image_bytes):
         hash_sha256 = hashlib.sha256(image_bytes)
