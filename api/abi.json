@@ -1,0 +1,187 @@
+[
+    {
+        "inputs": [
+            {
+                "internalType": "bytes32",
+                "name": "_imageHash",
+                "type": "bytes32"
+            },
+            {
+                "internalType": "string",
+                "name": "_status",
+                "type": "string"
+            },
+            {
+                "internalType": "string",
+                "name": "_geminiVerdict",
+                "type": "string"
+            },
+            {
+                "internalType": "string",
+                "name": "_blockLensVerdict",
+                "type": "string"
+            },
+            {
+                "internalType": "string",
+                "name": "_supportingSignals",
+                "type": "string"
+            },
+            {
+                "internalType": "uint256",
+                "name": "_confidence",
+                "type": "uint256"
+            }
+        ],
+        "name": "registerVerdict",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "internalType": "bytes32",
+                "name": "imageHash",
+                "type": "bytes32"
+            },
+            {
+                "indexed": false,
+                "internalType": "string",
+                "name": "status",
+                "type": "string"
+            },
+            {
+                "indexed": false,
+                "internalType": "string",
+                "name": "geminiVerdict",
+                "type": "string"
+            },
+            {
+                "indexed": false,
+                "internalType": "string",
+                "name": "blockLensVerdict",
+                "type": "string"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "confidence",
+                "type": "uint256"
+            },
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "registrar",
+                "type": "address"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "timestamp",
+                "type": "uint256"
+            }
+        ],
+        "name": "VerdictRegistered",
+        "type": "event"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "bytes32",
+                "name": "_imageHash",
+                "type": "bytes32"
+            }
+        ],
+        "name": "getVerdict",
+        "outputs": [
+            {
+                "internalType": "string",
+                "name": "status",
+                "type": "string"
+            },
+            {
+                "internalType": "string",
+                "name": "geminiVerdict",
+                "type": "string"
+            },
+            {
+                "internalType": "string",
+                "name": "blockLensVerdict",
+                "type": "string"
+            },
+            {
+                "internalType": "string",
+                "name": "supportingSignals",
+                "type": "string"
+            },
+            {
+                "internalType": "uint256",
+                "name": "confidence",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "timestamp",
+                "type": "uint256"
+            },
+            {
+                "internalType": "address",
+                "name": "registrar",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "bytes32",
+                "name": "",
+                "type": "bytes32"
+            }
+        ],
+        "name": "verdicts",
+        "outputs": [
+            {
+                "internalType": "string",
+                "name": "status",
+                "type": "string"
+            },
+            {
+                "internalType": "string",
+                "name": "geminiVerdict",
+                "type": "string"
+            },
+            {
+                "internalType": "string",
+                "name": "blockLensVerdict",
+                "type": "string"
+            },
+            {
+                "internalType": "string",
+                "name": "supportingSignals",
+                "type": "string"
+            },
+            {
+                "internalType": "uint256",
+                "name": "confidence",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "timestamp",
+                "type": "uint256"
+            },
+            {
+                "internalType": "address",
+                "name": "registrar",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    }
+]

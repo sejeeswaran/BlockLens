@@ -3,3 +3,4 @@ Pillow
 numpy
 exifread
 google-generativeai
+web3
