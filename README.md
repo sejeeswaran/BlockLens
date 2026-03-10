@@ -77,22 +77,12 @@ PRIVATE_KEY=your_ethereum_private_key
 If you want blockchain registration functionality:
 
 ```bash
-# Compile the contract
-python setup_compiler.py
-
+cd scripts
 # Deploy to Sepolia testnet
 python deploy_contract.py
 ```
 
 Update your `.env` file with the deployed contract address.
-
-### 3. Model Setup
-
-The application will automatically download required models on first run. For faster startup, you can pre-download them:
-
-```bash
-python check_models.py
-```
 
 ## Usage
 
@@ -127,7 +117,7 @@ Open your browser to `http://localhost:8501`
 - `app.py`: Main Streamlit application interface
 - `BlockLens_ai.py`: Custom trainable AI model
 - `blockchain.py`: Web3 integration for Ethereum interaction
-- `BlockLens.sol`: Solidity smart contract for verdict storage
+- `scripts/BlockLens.sol`: Solidity smart contract for verdict storage
 
 ### AI Pipeline
 
@@ -143,27 +133,6 @@ Open your browser to `http://localhost:8501`
 - Verdicts stored with timestamp and registrar address
 - Public verification through contract getters
 - Gas-optimized for cost-effective registration
-
-## Testing
-
-### Health Check
-
-```bash
-python health_check.py
-```
-
-### Manual Testing
-
-```bash
-python manual_test.py
-```
-
-### Blockchain Tests
-
-```bash
-python test_blockchain.py
-python verify_blockchain.py
-```
 
 ## API Reference
 
