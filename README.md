@@ -119,7 +119,7 @@ Open your browser to `http://localhost:8501`
 - `blockchain.py`: Web3 integration for Ethereum interaction
 - `scripts/BlockLens.sol`: Solidity smart contract for verdict storage
 
-### AI Pipeline
+### AI Pipeline:
 
 1. **Model Ensemble**: Multiple pre-trained models vote on image classification
 2. **Gemini Analysis**: Visual inspection for additional evidence
